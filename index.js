@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-import { DeviceEventEmitter, NativeModules, Platform } from 'react-native';
-import { EventEmitter } from 'events';
+import { DeviceEventEmitter, NativeModules, Platform } from "react-native";
+import { EventEmitter } from "events";
 
 let isAppRegistered = false;
 const { WeChat } = NativeModules;
@@ -9,7 +9,7 @@ const { WeChat } = NativeModules;
 // Event emitter to dispatch request and response from WeChat.
 const emitter = new EventEmitter();
 
-DeviceEventEmitter.addListener('WeChat_Resp', resp => {
+DeviceEventEmitter.addListener("WeChat_Resp", resp => {
   emitter.emit(resp.type, resp);
 });
 
@@ -18,10 +18,6 @@ function wrapRegisterApp(nativeFunc) {
     return undefined;
   }
   return (...args) => {
-    if (isAppRegistered) {
-      // FIXME(Yorkie): we ignore this error if AppRegistered is true.
-      return Promise.resolve(true);
-    }
     isAppRegistered = true;
     return new Promise((resolve, reject) => {
       nativeFunc.apply(null, [
@@ -30,11 +26,11 @@ function wrapRegisterApp(nativeFunc) {
           if (!error) {
             return resolve(result);
           }
-          if (typeof error === 'string') {
+          if (typeof error === "string") {
             return reject(new Error(error));
           }
           reject(error);
-        },
+        }
       ]);
     });
   };
@@ -46,7 +42,7 @@ function wrapApi(nativeFunc) {
   }
   return (...args) => {
     if (!isAppRegistered) {
-      return Promise.reject(new Error('registerApp required.'));
+      return Promise.reject(new Error("registerApp required."));
     }
     return new Promise((resolve, reject) => {
       nativeFunc.apply(null, [
@@ -55,11 +51,11 @@ function wrapApi(nativeFunc) {
           if (!error) {
             return resolve(result);
           }
-          if (typeof error === 'string') {
+          if (typeof error === "string") {
             return reject(new Error(error));
           }
           reject(error);
-        },
+        }
       ]);
     });
   };
@@ -102,7 +98,7 @@ export const registerApp = wrapRegisterApp(WeChat.registerApp);
  * @return {Promise}
  */
 export const registerAppWithDescription = wrapRegisterApp(
-  WeChat.registerAppWithDescription,
+  WeChat.registerAppWithDescription
 );
 
 /**
@@ -154,7 +150,7 @@ const nativeSendAuthRequest = wrapApi(WeChat.sendAuthRequest);
 export function sendAuthRequest(scopes, state) {
   return new Promise((resolve, reject) => {
     WeChat.sendAuthRequest(scopes, state, () => {});
-    emitter.once('SendAuth.Resp', resp => {
+    emitter.once("SendAuth.Resp", resp => {
       if (resp.errCode === 0) {
         resolve(resp);
       } else {
@@ -180,7 +176,7 @@ export function sendAuthRequest(scopes, state) {
 export function shareToTimeline(data) {
   return new Promise((resolve, reject) => {
     nativeShareToTimeline(data);
-    emitter.once('SendMessageToWX.Resp', resp => {
+    emitter.once("SendMessageToWX.Resp", resp => {
       if (resp.errCode === 0) {
         resolve(resp);
       } else {
@@ -206,7 +202,7 @@ export function shareToTimeline(data) {
 export function shareToSession(data) {
   return new Promise((resolve, reject) => {
     nativeShareToSession(data);
-    emitter.once('SendMessageToWX.Resp', resp => {
+    emitter.once("SendMessageToWX.Resp", resp => {
       if (resp.errCode === 0) {
         resolve(resp);
       } else {
@@ -232,7 +228,7 @@ export function shareToSession(data) {
 export function shareToFavorite(data) {
   return new Promise((resolve, reject) => {
     nativeShareToFavorite(data);
-    emitter.once('SendMessageToWX.Resp', resp => {
+    emitter.once("SendMessageToWX.Resp", resp => {
       if (resp.errCode === 0) {
         resolve(resp);
       } else {
@@ -263,20 +259,20 @@ export function pay(data) {
       delete data[actual];
     }
   }
-  correct('prepayid', 'prepayId');
-  correct('noncestr', 'nonceStr');
-  correct('partnerid', 'partnerId');
-  correct('timestamp', 'timeStamp');
-  
+  correct("prepayid", "prepayId");
+  correct("noncestr", "nonceStr");
+  correct("partnerid", "partnerId");
+  correct("timestamp", "timeStamp");
+
   // FIXME(94cstyles)
   // Android requires the type of the timeStamp field to be a string
-  if (Platform.OS === 'android') data.timeStamp = String(data.timeStamp)
+  if (Platform.OS === "android") data.timeStamp = String(data.timeStamp);
 
   return new Promise((resolve, reject) => {
     WeChat.pay(data, result => {
       if (result) reject(result);
     });
-    emitter.once('PayReq.Resp', resp => {
+    emitter.once("PayReq.Resp", resp => {
       if (resp.errCode === 0) {
         resolve(resp);
       } else {
@@ -293,16 +289,15 @@ export class WechatError extends Error {
   constructor(resp) {
     const message = resp.errStr || resp.errCode.toString();
     super(message);
-    this.name = 'WechatError';
+    this.name = "WechatError";
     this.code = resp.errCode;
 
     // avoid babel's limition about extending Error class
     // https://github.com/babel/babel/issues/3083
-    if (typeof Object.setPrototypeOf === 'function') {
+    if (typeof Object.setPrototypeOf === "function") {
       Object.setPrototypeOf(this, WechatError.prototype);
     } else {
       this.__proto__ = WechatError.prototype;
     }
   }
 }
-
